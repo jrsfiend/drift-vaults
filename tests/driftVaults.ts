@@ -1,12 +1,14 @@
 import * as anchor from '@coral-xyz/anchor';
 import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
+import fs from 'fs'
 import {
 	AdminClient,
 	BN,
 	BulkAccountLoader,
 	DriftClient,
 	InsuranceFundStake,
+	PublicKey,
 	UserAccount,
 	ZERO,
 	getInsuranceFundStakeAccountPublicKey,
@@ -32,6 +34,8 @@ import {
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk/lib';
+import { Exchange, utils } from '../ts/sdk/sdk/src';
+import { TOKEN_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/utils/token';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -45,10 +49,16 @@ describe('driftVaults', () => {
 	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
 	anchor.setProvider(provider);
 
-	const program = anchor.workspace.DriftVaults as Program<DriftVaults>;
+	const program = new anchor.Program(
+		JSON.parse(fs.readFileSync('./target/idl/drift_vaults.json', 'utf8').toString()),
+		// @ts-ignore
+		new PublicKey("HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb"),
+		provider
+	);
 	const adminClient = new AdminClient({
 		connection,
 		wallet: provider.wallet,
+		programID: new PublicKey("HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb")
 	});
 
 	const vaultClient = new VaultClient({
@@ -80,6 +90,7 @@ describe('driftVaults', () => {
 	});
 
 	it('Initialize Vault', async () => {
+		
 		await vaultClient.initializeVault({
 			name: encodeName(vaultName),
 			spotMarketIndex: 0,
@@ -116,6 +127,17 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
+		let marginAccount = utils.getCrossMarginAccount(
+		Exchange.programId,
+		provider.wallet.publicKey,
+		Uint8Array.from([0]) // seed number for subaccounts
+		)[0];
+
+		let accountManagerAddress = utils.getCrossMarginAccountManager(
+		Exchange.programId,
+		provider.wallet.publicKey
+		)[0];
+		
 		const txSig = await program.methods
 			.deposit(usdcAmount)
 			.accounts({
@@ -128,6 +150,13 @@ describe('driftVaults', () => {
 				driftState: await adminClient.getStatePublicKey(),
 				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 				driftProgram: adminClient.program.programId,
+				pricing: Exchange.pricingAddress,
+				marginAccount: marginAccount,
+				vault2: Exchange.combinedVaultAddress,
+				socializedLossAccount: Exchange.combinedSocializedLossAccountAddress,
+				authority: provider.wallet.publicKey,
+				tokenProgram: TOKEN_PROGRAM_ID,
+				state: Exchange.stateAddress,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -157,6 +186,17 @@ describe('driftVaults', () => {
 		);
 		assert(vaultDepositorAccount.vaultShares.eq(new BN(1_000_000_000)));
 
+
+		let marginAccount = utils.getCrossMarginAccount(
+		Exchange.programId,
+		provider.wallet.publicKey,
+		Uint8Array.from([0]) // seed number for subaccounts
+		)[0];
+
+		let accountManagerAddress = utils.getCrossMarginAccountManager(
+		Exchange.programId,
+		provider.wallet.publicKey
+		)[0];
 		// request withdraw
 		console.log('request withdraw');
 		const requestTxSig = await program.methods
@@ -172,6 +212,14 @@ describe('driftVaults', () => {
 				// driftSigner: adminClient.getStateAccount().signer,
 				// driftProgram: adminClient.program.programId,
 				// tokenProgram: TOKEN_PROGRAM_ID,
+				// @ts-ignore
+				state: Exchange.stateAddress,
+				pricing: Exchange.pricingAddress,
+				vault2: Exchange.combinedVaultAddress,
+				marginAccount: marginAccount,
+				authority: provider.wallet.publicKey,
+				tokenProgram: TOKEN_PROGRAM_ID,
+				socializedLossAccount: Exchange.combinedSocializedLossAccountAddress,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -261,6 +309,7 @@ describe('driftVaults', () => {
 		const vaultClient = new VaultClient({
 			driftClient: driftClient,
 			program: program,
+			programID: new PublicKey("HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb")
 		});
 		const vaultName = 'if stake vault';
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
@@ -337,6 +386,7 @@ describe('driftVaults', () => {
 		const vaultClient = new VaultClient({
 			driftClient: driftClient,
 			program: program,
+			programID: new PublicKey("HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb")
 		});
 		const vaultName = 'competition vault';
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
@@ -356,6 +406,7 @@ describe('driftVaults', () => {
 			const competitionsClient = new CompetitionsClient({
 				// @ts-ignore
 				driftClient: driftClient as DriftClient,
+				programID: new PublicKey("HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb")
 			});
 			const competitionName = 'sweepstakes';
 			const encodedName = encodeName(competitionName);

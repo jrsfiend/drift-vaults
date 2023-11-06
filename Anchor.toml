@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+drift_vaults = "HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb"
 
 [registry]
 url = "https://api.apr.dev"
@@ -12,7 +12,7 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [[test.genesis]]
-address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+address = "HxBBGnmMrjmrdNq3EcEYPa8rERPPThsvzt59BGtk8mZb"
 program = "./deps/drift.so"
 
 [[test.genesis]]

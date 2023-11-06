@@ -36,6 +36,7 @@ import {
 } from '@solana/spl-token';
 import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { Exchange, utils } from '@zetamarkets/sdk';
 
 export class VaultClient {
 	driftClient: DriftClient;
@@ -140,6 +141,7 @@ export class VaultClient {
 		profitShare: number;
 		hurdleRate: number;
 		permissioned: boolean;
+
 	}): Promise<TransactionSignature> {
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
@@ -161,6 +163,10 @@ export class VaultClient {
 			vault
 		);
 
+		let accountManagerAddress = utils.getCrossMarginAccountManager(
+		Exchange.programId,
+		this.driftClient.getStateAccount().signer
+		)[0];
 		const accounts = {
 			driftSpotMarket: spotMarket.pubkey,
 			driftSpotMarketMint: spotMarket.mint,
@@ -170,6 +176,8 @@ export class VaultClient {
 			vault,
 			tokenAccount,
 			driftProgram: this.driftClient.program.programId,
+			crossMarginAccountManager: accountManagerAddress,
+			zetaProgram: Exchange.programId,
 		};
 
 		return await this.program.methods

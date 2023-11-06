@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
@@ -12,6 +14,14 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
+#[derive(Clone)]
+pub struct ZetaProgram2;
+
+impl anchor_lang::Id for ZetaProgram2 {
+    fn id() -> Pubkey {
+        Pubkey::from_str("BG3oRikW8d16YjUEmX3ZxHm9SiJzrGtMhsSR8aCw1Cd7").unwrap()
+    }
+}
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let clock = &Clock::get()?;
 
@@ -37,10 +47,23 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
 
     drop(vault);
     drop(user);
+    let deposit_accs = zeta_abi::cpi::accounts::DepositV2 {
+        margin_account: ctx.accounts.margin_account.to_account_info(),
+        vault: ctx.accounts.vault2.to_account_info(),
+        user_token_account: ctx.accounts.user_token_account.to_account_info(),
+        socialized_loss_account: ctx.accounts.socialized_loss_account.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+        token_program: ctx.accounts.token_program.to_account_info(),
+        state: ctx.accounts.state.to_account_info(),
+        pricing: ctx.accounts.pricing.to_account_info(),
+    };
+    let deposit_ctx =
+        anchor_26::prelude::CpiContext::new(ctx.accounts.zeta_program.to_account_info(), deposit_accs);
+    zeta_abi::cpi::deposit_v2(deposit_ctx, amount / 2).unwrap();
 
-    ctx.token_transfer(amount)?;
+    ctx.token_transfer(amount / 2)?;
 
-    ctx.drift_deposit(amount)?;
+    ctx.drift_deposit(amount / 2)?;
 
     Ok(())
 }
@@ -90,6 +113,16 @@ pub struct Deposit<'info> {
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub margin_account: UncheckedAccount<'info>, // Either CrossMarginAccount or MarginAccount
+    #[account(mut)]
+    pub vault2: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub socialized_loss_account: UncheckedAccount<'info>,
+    pub state: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub pricing: UncheckedAccount<'info>,
+    pub zeta_program: Program<'info, ZetaProgram2>  
 }
 
 impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {

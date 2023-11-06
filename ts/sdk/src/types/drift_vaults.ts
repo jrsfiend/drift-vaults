@@ -69,6 +69,16 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
+				},
+				{
+					name: 'crossMarginAccountManager';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'zetaProgram';
+					isMut: false;
+					isSigner: false;
 				}
 			];
 			args: [
@@ -258,6 +268,36 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
+				},
+				{
+					name: 'marginAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vault2';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'socializedLossAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'state';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'pricing';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'zetaProgram';
+					isMut: false;
+					isSigner: false;
 				}
 			];
 			args: [
@@ -410,6 +450,36 @@ export type DriftVaults = {
 				},
 				{
 					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'state';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'pricing';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vault2';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'marginAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'socializedLossAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'zetaProgram';
 					isMut: false;
 					isSigner: false;
 				}
@@ -1657,6 +1727,16 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
+				{
+					name: 'crossMarginAccountManager',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'zetaProgram',
+					isMut: false,
+					isSigner: false,
+				},
 			],
 			args: [
 				{
@@ -1846,6 +1926,36 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
+				{
+					name: 'marginAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vault2',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'socializedLossAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'state',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'pricing',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'zetaProgram',
+					isMut: false,
+					isSigner: false,
+				},
 			],
 			args: [
 				{
@@ -1997,6 +2107,36 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'state',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'pricing',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vault2',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'marginAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'socializedLossAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'zetaProgram',
 					isMut: false,
 					isSigner: false,
 				},

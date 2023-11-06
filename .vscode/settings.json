@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./zeta-abi/abi-wrapper/Cargo.toml"
+    ]
+}

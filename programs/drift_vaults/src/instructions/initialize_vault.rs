@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::constants::ONE_DAY;
 use crate::cpi::InitializeUserCPI;
 use crate::{error::ErrorCode, validate, Size, Vault};
@@ -8,6 +10,16 @@ use drift::math::casting::Cast;
 use drift::math::constants::PERCENTAGE_PRECISION_U64;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
+
+
+#[derive(Clone)]
+pub struct ZetaProgram2;
+
+impl anchor_lang::Id for ZetaProgram2 {
+    fn id() -> Pubkey {
+        Pubkey::from_str("BG3oRikW8d16YjUEmX3ZxHm9SiJzrGtMhsSR8aCw1Cd7").unwrap()
+    }
+}
 
 pub fn initialize_vault<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
@@ -59,6 +71,27 @@ pub fn initialize_vault<'info>(
     vault.permissioned = params.permissioned;
 
     drop(vault);
+
+    msg!("In abi_wrapper::initialize_cross_margin_account_manager");
+    let init_cross_margin_account_manager_accs =
+        zeta_abi::cpi::accounts::InitializeCrossMarginAccountManager {
+            cross_margin_account_manager: ctx
+                .accounts
+                .cross_margin_account_manager
+                .to_account_info(),
+            authority: ctx.accounts.manager.to_account_info(),
+            payer: ctx.accounts.payer.to_account_info(),
+            zeta_program: ctx.accounts.zeta_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+        };
+    let init_cross_margin_account_manager_ctx = anchor_26::prelude::CpiContext::new(
+        ctx.accounts.zeta_program.to_account_info(),
+        init_cross_margin_account_manager_accs,
+    );
+    zeta_abi::cpi::initialize_cross_margin_account_manager(
+        init_cross_margin_account_manager_ctx,
+    ).unwrap();
+
 
     ctx.drift_initialize_user(params.name, *bump)?;
     ctx.drift_initialize_user_stats(params.name, *bump)?;
@@ -123,6 +156,9 @@ pub struct InitializeVault<'info> {
     pub system_program: Program<'info, System>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub cross_margin_account_manager: UncheckedAccount<'info>,
+    pub zeta_program: Program<'info, ZetaProgram2>,
 }
 
 impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'info>> {

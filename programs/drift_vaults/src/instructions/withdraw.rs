@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
@@ -15,6 +17,14 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
+#[derive(Clone)]
+pub struct ZetaProgram2;
+
+impl anchor_lang::Id for ZetaProgram2 {
+    fn id() -> Pubkey {
+        Pubkey::from_str("BG3oRikW8d16YjUEmX3ZxHm9SiJzrGtMhsSR8aCw1Cd7").unwrap()
+    }
+}
 pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
@@ -40,10 +50,22 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
     drop(vault);
     drop(user);
 
-    ctx.drift_withdraw(user_withdraw_amount)?;
+    ctx.drift_withdraw(user_withdraw_amount / 2)?;
 
-    ctx.token_transfer(user_withdraw_amount)?;
-
+    ctx.token_transfer(user_withdraw_amount / 2)?;
+    let withdraw_accs = zeta_abi::cpi::accounts::WithdrawV2 {
+        state: ctx.accounts.state.to_account_info(),
+        pricing: ctx.accounts.pricing.to_account_info(),
+        vault: ctx.accounts.vault2.to_account_info(),
+        margin_account: ctx.accounts.margin_account.to_account_info(),
+        user_token_account: ctx.accounts.user_token_account.to_account_info(),
+        token_program: ctx.accounts.token_program.to_account_info(),
+        authority: ctx.accounts.authority.to_account_info(),
+        socialized_loss_account: ctx.accounts.socialized_loss_account.to_account_info(),
+    };
+    let withdraw_ctx =
+        anchor_26::prelude::CpiContext::new(ctx.accounts.zeta_program.to_account_info(), withdraw_accs);
+    zeta_abi::cpi::withdraw_v2(withdraw_ctx, user_withdraw_amount / 2).unwrap();
     if finishing_liquidation {
         let mut vault = ctx.accounts.vault.load_mut()?;
         let vault_delegate = vault.delegate;
@@ -104,6 +126,16 @@ pub struct Withdraw<'info> {
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
+    pub state: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub pricing: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub vault2: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub margin_account: UncheckedAccount<'info>, // Either CrossMarginAccount or MarginAccount
+    #[account(mut)]
+    pub socialized_loss_account: UncheckedAccount<'info>,
+    pub zeta_program: Program<'info, ZetaProgram2>,
 }
 
 impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
